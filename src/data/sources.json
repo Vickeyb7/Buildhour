@@ -1,0 +1,202 @@
+[
+  {
+    "id": 1,
+    "category": "AMC Overview",
+    "entity": "HDFC AMC",
+    "title": "HDFC AMC Corporate Profile & Overview",
+    "url": "https://www.hdfcfund.com/about-us/corporate-profile",
+    "purpose": "AMC management, sponsor, trustee details, and governance structure."
+  },
+  {
+    "id": 2,
+    "category": "Scheme Details",
+    "entity": "HDFC AMC",
+    "title": "HDFC Large Cap Fund Direct Growth",
+    "url": "https://www.hdfcfund.com/our-products/hdfc-large-cap-fund",
+    "purpose": "Investment objective, portfolio, AUM, NAV, and minimum SIP for Large Cap."
+  },
+  {
+    "id": 3,
+    "category": "Scheme Details",
+    "entity": "HDFC AMC",
+    "title": "HDFC Flexi Cap Fund Direct Growth",
+    "url": "https://www.hdfcfund.com/our-products/hdfc-flexi-cap-fund",
+    "purpose": "Fund overview, allocation strategy, fund managers, and riskometer for Flexi Cap."
+  },
+  {
+    "id": 4,
+    "category": "Scheme Details",
+    "entity": "HDFC AMC",
+    "title": "HDFC ELSS Tax Saver Direct Growth",
+    "url": "https://www.hdfcfund.com/our-products/hdfc-elss-tax-saver",
+    "purpose": "Lock-in period (3 years), Section 80C tax deduction details, and exit load."
+  },
+  {
+    "id": 5,
+    "category": "Scheme Details",
+    "entity": "HDFC AMC",
+    "title": "HDFC Mid Cap Fund Direct Growth",
+    "url": "https://www.hdfcfund.com/our-products/hdfc-mid-cap-fund",
+    "purpose": "Mid-cap mandate, minimum investment amounts, risk profile, and benchmark."
+  },
+  {
+    "id": 6,
+    "category": "Factsheets",
+    "entity": "HDFC AMC",
+    "title": "Monthly Factsheet Repository",
+    "url": "https://www.hdfcfund.com/mutual-funds/factsheets",
+    "purpose": "Official monthly factsheets detailing portfolio holdings, returns, and fund metrics."
+  },
+  {
+    "id": 7,
+    "category": "Statutory KIM/SID",
+    "entity": "HDFC AMC",
+    "title": "Scheme Information Documents (SID) & KIM",
+    "url": "https://www.hdfcfund.com/statutory-disclosure/scheme-information-document-sid",
+    "purpose": "Statutory SID, KIM, and Statement of Additional Information (SAI) filings."
+  },
+  {
+    "id": 8,
+    "category": "Fee / Charges",
+    "entity": "HDFC AMC",
+    "title": "Daily Total Expense Ratio (TER) Disclosures",
+    "url": "https://www.hdfcfund.com/statutory-disclosure/total-expense-ratio-ter",
+    "purpose": "Regulatory daily TER disclosures across regular and direct mutual fund plans."
+  },
+  {
+    "id": 9,
+    "category": "Fee / Charges",
+    "entity": "HDFC AMC",
+    "title": "Exit Load & Addenda Disclosures",
+    "url": "https://www.hdfcfund.com/statutory-disclosure/notice-addenda",
+    "purpose": "Formal notices regarding changes in exit loads, scheme features, and cut-offs."
+  },
+  {
+    "id": 10,
+    "category": "Statements",
+    "entity": "HDFC AMC",
+    "title": "Request Statement & Capital Gains Portal",
+    "url": "https://www.hdfcfund.com/services/additional-info/request-statement",
+    "purpose": "Portal to generate account statements, capital gains tax summaries, and holding certs."
+  },
+  {
+    "id": 11,
+    "category": "Investor Education",
+    "entity": "AMFI",
+    "title": "AMFI Investor Corner",
+    "url": "https://www.amfiindia.com/investor-corner",
+    "purpose": "Comprehensive central portal for mutual fund investor awareness and guidance."
+  },
+  {
+    "id": 12,
+    "category": "Core Concepts",
+    "entity": "AMFI",
+    "title": "Understanding Net Asset Value (NAV)",
+    "url": "https://www.amfiindia.com/investor-corner/knowledge-center/what-is-nav.html",
+    "purpose": "Definition, calculation formula, per-unit valuation, and daily NAV declaration rules."
+  },
+  {
+    "id": 13,
+    "category": "Fee / Charges",
+    "entity": "AMFI",
+    "title": "Total Expense Ratio (TER) Guide",
+    "url": "https://www.amfiindia.com/investor-corner/knowledge-center/expense-ratio.html",
+    "purpose": "Breakdown of fund management, administrative costs, and regulatory expense limits."
+  },
+  {
+    "id": 14,
+    "category": "Operational Guide",
+    "entity": "AMFI",
+    "title": "NAV Cut-Off Timings & Order Execution",
+    "url": "https://www.amfiindia.com/investor-corner/knowledge-center/cut-off-timings.html",
+    "purpose": "SEBI-mandated cut-off timings for same-day NAV allocation across liquid and equity funds."
+  },
+  {
+    "id": 15,
+    "category": "Core Concepts",
+    "entity": "AMFI",
+    "title": "Systematic Investment Plan (SIP) Guide",
+    "url": "https://www.amfiindia.com/investor-corner/knowledge-center/what-is-sip.html",
+    "purpose": "Principles of rupee cost averaging, periodic compounding, and SIP setup procedures."
+  },
+  {
+    "id": 16,
+    "category": "Scheme Options",
+    "entity": "AMFI",
+    "title": "Direct Plan vs Regular Plan Guide",
+    "url": "https://www.amfiindia.com/investor-corner/knowledge-center/direct-plan.html",
+    "purpose": "Impact of distributor commissions on TER and long-term compounding differences."
+  },
+  {
+    "id": 17,
+    "category": "Risk Assessment",
+    "entity": "AMFI",
+    "title": "Product Labeling & Risk-o-meter Guide",
+    "url": "https://www.amfiindia.com/investor-corner/knowledge-center/riskometer.html",
+    "purpose": "Explains the 6 risk levels (Low to Very High) assigned to mutual fund schemes."
+  },
+  {
+    "id": 18,
+    "category": "Systematic Plans",
+    "entity": "AMFI",
+    "title": "Systematic Withdrawal & Transfer (SWP/STP)",
+    "url": "https://www.amfiindia.com/investor-corner/knowledge-center/swp.html",
+    "purpose": "Cash-flow generation via SWP and risk-managed capital migration via STP."
+  },
+  {
+    "id": 19,
+    "category": "Industry Data",
+    "entity": "AMFI",
+    "title": "Industry AUM & Category Statistics",
+    "url": "https://www.amfiindia.com/research-information/aum-data",
+    "purpose": "Monthly official industry Assets Under Management (AUM) and folio statistics."
+  },
+  {
+    "id": 20,
+    "category": "Regulatory Mandate",
+    "entity": "SEBI",
+    "title": "Categorization & Rationalization of Schemes",
+    "url": "https://www.sebi.gov.in/legal/circulars/oct-2017/categorization-and-rationalization-of-mutual-fund-schemes_36199.html",
+    "purpose": "Landmark SEBI circular establishing uniform definitions for Large, Mid, and Small Cap."
+  },
+  {
+    "id": 21,
+    "category": "Risk Standards",
+    "entity": "SEBI",
+    "title": "Product Labeling & Risk-o-meter Circular",
+    "url": "https://www.sebi.gov.in/legal/circulars/oct-2020/circular-on-product-labeling-in-mutual-fund-schemes-risk-o-meter_47791.html",
+    "purpose": "SEBI rules requiring monthly riskometer reviews based on portfolio liquidity and volatility."
+  },
+  {
+    "id": 22,
+    "category": "Benchmarking",
+    "entity": "SEBI",
+    "title": "Guiding Principles for Scheme Benchmarks",
+    "url": "https://www.sebi.gov.in/legal/circulars/oct-2021/guiding-principles-for-bringing-uniformity-in-benchmarks-of-mutual-fund-schemes_53556.html",
+    "purpose": "Standardizes Tier-1 (broad market) and Tier-2 (style/sector) scheme benchmarks."
+  },
+  {
+    "id": 23,
+    "category": "Regulatory Master",
+    "entity": "SEBI",
+    "title": "Master Circular for Mutual Funds",
+    "url": "https://www.sebi.gov.in/legal/master-circulars/may-2023/master-circular-for-mutual-funds_71360.html",
+    "purpose": "Comprehensive consolidation of all operational, compliance, and governance guidelines."
+  },
+  {
+    "id": 24,
+    "category": "Statements & Tax",
+    "entity": "CAMS",
+    "title": "Consolidated Account Statement (CAS) Portal",
+    "url": "https://www.camsonline.com/Investors/Statements/Consolidated-Account-Statement",
+    "purpose": "Official RTA service providing consolidated statements across all AMCs and folios."
+  },
+  {
+    "id": 25,
+    "category": "Statements & Tax",
+    "entity": "KFintech",
+    "title": "Mutual Fund Statement & Capital Gains Portal",
+    "url": "https://mfs.kfintech.com/investor/General/ConsolidatedAccountStatement",
+    "purpose": "Single-window access to capital-gains statements for tax filing across multiple fund houses."
+  }
+]

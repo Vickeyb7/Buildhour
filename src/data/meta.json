@@ -1,5 +1,5 @@
 {
   "model": "sentence-transformers/all-MiniLM-L6-v2",
   "dim": 384,
-  "count": 57
+  "count": 89
 }

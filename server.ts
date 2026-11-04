@@ -61,9 +61,9 @@ app.post("/api/ask", async (req, res) => {
       });
     }
 
-    // 2. Identify any relevant HDFC scheme chunks
+    // 2. Identify relevant scheme or general corpus chunks across AMC, AMFI, and SEBI
     const namedSchemes = detectSchemes(question);
-    const retrievedChunks = namedSchemes.length > 0 ? retrieveAll(question, namedSchemes) : [];
+    const retrievedChunks = namedSchemes.length > 0 ? retrieveAll(question, namedSchemes) : retrieveAll(question, []);
 
     // 3. Check for general concept match
     const conceptMatch = findMatchingConcept(question);

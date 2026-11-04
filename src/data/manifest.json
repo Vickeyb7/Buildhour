@@ -43,5 +43,185 @@
     "scraped_at": "2026-11-03T17:04:09.479888+00:00",
     "http_status": 200,
     "content_hash": "84e470ff06bf736e425b34c6aa28f3b18c248fbcaf2cfc0a40f3d1d688e89bdf"
+  },
+  {
+    "slug": "hdfc-monthly-factsheets",
+    "name": "HDFC Mutual Fund Monthly Factsheets",
+    "type": "factsheet",
+    "url": "https://www.hdfcfund.com/mutual-funds/factsheets",
+    "scraped_at": "2026-11-04T12:00:00.000000+00:00",
+    "http_status": 200,
+    "content_hash": "8c3627c1b0050b98d0ddab7f0e0d755d42c50058c15a1a090964425bf19262f7"
+  },
+  {
+    "slug": "hdfc-statutory-sid-kim",
+    "name": "HDFC Scheme Information Document & KIM",
+    "type": "statutory",
+    "url": "https://www.hdfcfund.com/statutory-disclosure/scheme-information-document-sid",
+    "scraped_at": "2026-11-04T12:00:00.000000+00:00",
+    "http_status": 200,
+    "content_hash": "d5efc8b5380aec40d0ee6222dcf8338a069a44a909839ea57f8bdba18b6acc40"
+  },
+  {
+    "slug": "hdfc-ter-disclosures",
+    "name": "HDFC Total Expense Ratio Disclosures",
+    "type": "charges",
+    "url": "https://www.hdfcfund.com/statutory-disclosure/total-expense-ratio-ter",
+    "scraped_at": "2026-11-04T12:00:00.000000+00:00",
+    "http_status": 200,
+    "content_hash": "787413769d198eb24e425ae97265a91e5acc9e602cdddf21242c22d26b788d4f"
+  },
+  {
+    "slug": "hdfc-exit-load-notices",
+    "name": "HDFC Exit Load & Addenda Disclosures",
+    "type": "charges",
+    "url": "https://www.hdfcfund.com/statutory-disclosure/notice-addenda",
+    "scraped_at": "2026-11-04T12:00:00.000000+00:00",
+    "http_status": 200,
+    "content_hash": "804a5f2be3da24252b746046337d1a4f49082382e6e41ab4ba76a90fc06d851a"
+  },
+  {
+    "slug": "hdfc-statement-portal",
+    "name": "HDFC Request Statement & Capital Gains Portal",
+    "type": "statements",
+    "url": "https://www.hdfcfund.com/services/additional-info/request-statement",
+    "scraped_at": "2026-11-04T12:00:00.000000+00:00",
+    "http_status": 200,
+    "content_hash": "5f9b1f48f8db2b02629a3d433aa1582710ccb09815b59e9b9d63a29522f0295a"
+  },
+  {
+    "slug": "amfi-investor-corner",
+    "name": "AMFI Investor Corner",
+    "type": "investor_education",
+    "url": "https://www.amfiindia.com/investor-corner",
+    "scraped_at": "2026-11-04T12:00:00.000000+00:00",
+    "http_status": 200,
+    "content_hash": "c0f19d711e2dc7345784aa1015130b42d87cefc5652a89e687d1ecbd55c60ccc"
+  },
+  {
+    "slug": "amfi-nav-guide",
+    "name": "AMFI Net Asset Value Guide",
+    "type": "core_concept",
+    "url": "https://www.amfiindia.com/investor-corner/knowledge-center/what-is-nav.html",
+    "scraped_at": "2026-11-04T12:00:00.000000+00:00",
+    "http_status": 200,
+    "content_hash": "1e9963705b9bfa53d2174e41de16e5480b23776c379bae788ca8e84b484e3db4"
+  },
+  {
+    "slug": "amfi-expense-ratio-guide",
+    "name": "AMFI Total Expense Ratio Guide",
+    "type": "charges",
+    "url": "https://www.amfiindia.com/investor-corner/knowledge-center/expense-ratio.html",
+    "scraped_at": "2026-11-04T12:00:00.000000+00:00",
+    "http_status": 200,
+    "content_hash": "76493514dcd2f0f884a124fee6f33d9e17f19000edecfe535cfbfa874ee32358"
+  },
+  {
+    "slug": "amfi-cut-off-timings",
+    "name": "AMFI NAV Cut-Off Timings",
+    "type": "operational",
+    "url": "https://www.amfiindia.com/investor-corner/knowledge-center/cut-off-timings.html",
+    "scraped_at": "2026-11-04T12:00:00.000000+00:00",
+    "http_status": 200,
+    "content_hash": "8972463c59b5b44bc559c872e5d3d4d8d805f881c3c1c449e183f507d19d6cb7"
+  },
+  {
+    "slug": "amfi-sip-guide",
+    "name": "AMFI Systematic Investment Plan Guide",
+    "type": "core_concept",
+    "url": "https://www.amfiindia.com/investor-corner/knowledge-center/what-is-sip.html",
+    "scraped_at": "2026-11-04T12:00:00.000000+00:00",
+    "http_status": 200,
+    "content_hash": "87e51ab436a5b69d50df1f40244b473e238853ee7201f20957547a633d963486"
+  },
+  {
+    "slug": "amfi-direct-vs-regular",
+    "name": "AMFI Direct vs Regular Plan Guide",
+    "type": "core_concept",
+    "url": "https://www.amfiindia.com/investor-corner/knowledge-center/direct-plan.html",
+    "scraped_at": "2026-11-04T12:00:00.000000+00:00",
+    "http_status": 200,
+    "content_hash": "c5c396a53059d88a0b252dec71adc4f929a0b70911048ee0bd31980c2e966364"
+  },
+  {
+    "slug": "amfi-riskometer-guide",
+    "name": "AMFI Product Labeling & Riskometer Guide",
+    "type": "risk",
+    "url": "https://www.amfiindia.com/investor-corner/knowledge-center/riskometer.html",
+    "scraped_at": "2026-11-04T12:00:00.000000+00:00",
+    "http_status": 200,
+    "content_hash": "53b3c04b2d347499e3a62b948e8581c9d22ea3a66b43ae6606bbc20678a5d722"
+  },
+  {
+    "slug": "amfi-swp-stp-guide",
+    "name": "AMFI Systematic Withdrawal & Transfer Plans",
+    "type": "core_concept",
+    "url": "https://www.amfiindia.com/investor-corner/knowledge-center/swp.html",
+    "scraped_at": "2026-11-04T12:00:00.000000+00:00",
+    "http_status": 200,
+    "content_hash": "fb059a86b96c9a00d0a210b50d4c3acb6e2d77d53699a945a87bfa8ea0029880"
+  },
+  {
+    "slug": "amfi-aum-data",
+    "name": "AMFI Industry AUM & Classification Data",
+    "type": "industry_data",
+    "url": "https://www.amfiindia.com/research-information/aum-data",
+    "scraped_at": "2026-11-04T12:00:00.000000+00:00",
+    "http_status": 200,
+    "content_hash": "2b733e741b731d76af00a00b233c5df03452b59e259f8a4815d44e7b30afd332"
+  },
+  {
+    "slug": "sebi-scheme-categorization",
+    "name": "SEBI Scheme Categorization & Rationalization",
+    "type": "regulation",
+    "url": "https://www.sebi.gov.in/legal/circulars/oct-2017/categorization-and-rationalization-of-mutual-fund-schemes_36199.html",
+    "scraped_at": "2026-11-04T12:00:00.000000+00:00",
+    "http_status": 200,
+    "content_hash": "235ffece7477f4bc3756b64c33b8a104b5973dbdb8587534a1d45499a6b9f08f"
+  },
+  {
+    "slug": "sebi-riskometer-circular",
+    "name": "SEBI Product Labeling & Riskometer Circular",
+    "type": "regulation",
+    "url": "https://www.sebi.gov.in/legal/circulars/oct-2020/circular-on-product-labeling-in-mutual-fund-schemes-risk-o-meter_47791.html",
+    "scraped_at": "2026-11-04T12:00:00.000000+00:00",
+    "http_status": 200,
+    "content_hash": "7f9aa8b36e29f15eb251f100b59572983777a6fb42af280a3b02f2aaefef95b9"
+  },
+  {
+    "slug": "sebi-benchmark-guidelines",
+    "name": "SEBI Guiding Principles for Scheme Benchmarks",
+    "type": "regulation",
+    "url": "https://www.sebi.gov.in/legal/circulars/oct-2021/guiding-principles-for-bringing-uniformity-in-benchmarks-of-mutual-fund-schemes_53556.html",
+    "scraped_at": "2026-11-04T12:00:00.000000+00:00",
+    "http_status": 200,
+    "content_hash": "8ce103ac5da95c55d70108c1b3f948412b78ca9a42589d12b29df4b78740dfc9"
+  },
+  {
+    "slug": "sebi-master-circular-mf",
+    "name": "SEBI Master Circular for Mutual Funds",
+    "type": "regulation",
+    "url": "https://www.sebi.gov.in/legal/master-circulars/may-2023/master-circular-for-mutual-funds_71360.html",
+    "scraped_at": "2026-11-04T12:00:00.000000+00:00",
+    "http_status": 200,
+    "content_hash": "92158b1ed64d0593bd5b16f44a19af1b24a91da2eb334c83d4a6fe27fae937ec"
+  },
+  {
+    "slug": "cams-cas-portal",
+    "name": "CAMS Consolidated Account Statement Portal",
+    "type": "statements",
+    "url": "https://www.camsonline.com/Investors/Statements/Consolidated-Account-Statement",
+    "scraped_at": "2026-11-04T12:00:00.000000+00:00",
+    "http_status": 200,
+    "content_hash": "94059a52af80cda3a317fc9cd3f79bb76c4fc3bc83ef758f0ca7dd715611bf77"
+  },
+  {
+    "slug": "kfintech-cas-portal",
+    "name": "KFintech Statement & Capital Gains Portal",
+    "type": "statements",
+    "url": "https://mfs.kfintech.com/investor/General/ConsolidatedAccountStatement",
+    "scraped_at": "2026-11-04T12:00:00.000000+00:00",
+    "http_status": 200,
+    "content_hash": "2566dd9dbd39a32a960aa643de30234fb437df59a59e4744086eefec28ab63e1"
   }
 ]

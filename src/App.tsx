@@ -3,6 +3,7 @@ import appConfig from "./data/app-config.json";
 import corpusData from "./data/corpus.json";
 import manifestData from "./data/manifest.json";
 import metaData from "./data/meta.json";
+import sourcesData from "./data/sources.json";
 import { answerQuestion, Chunk, Answer } from "./lib/ask";
 import { MF_CONCEPTS } from "./lib/knowledge";
 
@@ -27,7 +28,7 @@ export default function App() {
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [chunks, setChunks] = useState<Chunk[]>([]);
-  const [inspectorTab, setInspectorTab] = useState<"retrieval" | "concepts" | "manifest" | "counts" | "meta">("retrieval");
+  const [inspectorTab, setInspectorTab] = useState<"retrieval" | "concepts" | "sources" | "manifest" | "counts" | "meta">("retrieval");
 
   const chunkCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -180,10 +181,17 @@ export default function App() {
               </button>
               <button
                 type="button"
+                className={`tab-btn ${inspectorTab === "sources" ? "active" : ""}`}
+                onClick={() => setInspectorTab("sources")}
+              >
+                Official Sources ({sourcesData.length})
+              </button>
+              <button
+                type="button"
                 className={`tab-btn ${inspectorTab === "manifest" ? "active" : ""}`}
                 onClick={() => setInspectorTab("manifest")}
               >
-                Manifest ({manifestData.length})
+                Scraped Corpus ({manifestData.length})
               </button>
               <button
                 type="button"
@@ -242,6 +250,33 @@ export default function App() {
                     <tr key={c.id}>
                       <td><strong>{c.name}</strong></td>
                       <td>{c.summary}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+
+            {inspectorTab === "sources" && (
+              <table>
+                <thead>
+                  <tr>
+                    <th style={{ width: "95px" }}>Entity</th>
+                    <th style={{ width: "125px" }}>Category</th>
+                    <th>Document / Source Link</th>
+                    <th>Purpose / Regulatory Scope</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sourcesData.map((s) => (
+                    <tr key={s.id}>
+                      <td><strong>{s.entity}</strong></td>
+                      <td>{s.category}</td>
+                      <td>
+                        <a href={s.url} target="_blank" rel="noopener noreferrer">
+                          {s.title} ↗
+                        </a>
+                      </td>
+                      <td>{s.purpose}</td>
                     </tr>
                   ))}
                 </tbody>

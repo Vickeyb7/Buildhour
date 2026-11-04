@@ -54,6 +54,12 @@ const ADVICE = [
   /which fund will give best returns/i,
   /tell me which fund to pick/i,
   /guaranteed return/i,
+  /\brecommend\b/i,
+  /\bbest (mutual )?fund\b/i,
+  /\bwhich fund is best\b/i,
+  /\bsuggest (a )?fund\b/i,
+  /\btop funds?\b/i,
+  /\bwhere to invest\b/i,
 ];
 
 const PORTFOLIO = [/my portfolio/i, /review my holdings/i, /is my sip good/i];
@@ -71,13 +77,18 @@ const REFUSALS: Record<string, string> = {
 };
 
 const SCHEME_RULES: [string, string][] = [
-  ["large cap", "Large Cap"],
-  ["flexi cap", "Flexi Cap"],
-  ["equity fund", "Flexi Cap"],
-  ["tax saver", "ELSS"],
-  ["elss", "ELSS"],
-  ["mid cap", "Mid Cap"],
-  ["midcap", "Mid Cap"],
+  ["hdfc large cap", "Large Cap"],
+  ["hdfc flexi cap", "Flexi Cap"],
+  ["hdfc equity fund", "Flexi Cap"],
+  ["hdfc tax saver", "ELSS"],
+  ["hdfc elss", "ELSS"],
+  ["hdfc mid cap", "Mid Cap"],
+  ["hdfc midcap", "Mid Cap"],
+  ["large cap fund", "Large Cap"],
+  ["flexi cap fund", "Flexi Cap"],
+  ["mid cap fund", "Mid Cap"],
+  ["elss fund", "ELSS"],
+  ["tax saver fund", "ELSS"],
 ];
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -88,6 +99,12 @@ export function schemes() {
 
 export function detectSchemes(query: string): string[] {
   const text = query.toLowerCase();
+
+  // If query is about SEBI regulations, definitions, cut-off, or concepts, don't force scheme filtering unless HDFC is explicitly named
+  if ((text.includes("sebi") || text.includes("rule") || text.includes("define") || text.includes("what is") || text.includes("what are")) && !text.includes("hdfc")) {
+    return [];
+  }
+
   const found: string[] = [];
   for (const [keyword, marker] of SCHEME_RULES) {
     if (!text.includes(keyword)) continue;
@@ -210,6 +227,16 @@ const SECTION_KEYWORDS: Record<string, string[]> = {
   cio: ["cio"],
   overview: ["overview", "about"],
   faq: ["faq", "question"],
+  sid_purpose: ["sid", "scheme information document", "statutory", "legal document", "offer document"],
+  kim_purpose: ["kim", "key information memorandum", "summary", "application form"],
+  sebi_categorization_and_market_cap_rules: ["sebi", "large cap", "mid cap", "small cap", "market cap", "categorization", "rationalization", "rank", "top 100", "101st"],
+  nav_concept: ["nav", "net asset value", "calculation", "closing", "per unit"],
+  cut_off_timing_rules: ["cut-off", "cut off", "timing", "liquid", "same day", "overnight", "1:30", "3:00"],
+  riskometer_guidelines: ["riskometer", "risk-o-meter", "risk level", "monthly", "6 levels"],
+  ter_caps_and_slab_rules: ["ter", "expense ratio", "caps", "slabs", "aum", "direct"],
+  amfi_code_of_conduct: ["code of conduct", "ethics", "unethical", "mis-selling"],
+  cas_statements: ["cas", "consolidated account statement", "cams", "kfintech", "statement"],
+  dividend_vs_growth: ["idcw", "dividend", "growth", "distribution", "reinvestment"],
 };
 
 export function scoreChunk(chunk: StoredChunk, query: string, targetScheme?: string | null): number {
