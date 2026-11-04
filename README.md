@@ -24,6 +24,16 @@ python run_ingestion.py --phase 4
 
 ## App and checks
 
+The Vercel app is the Next.js site in `web/`. Streamlit remains available for a local Python demo.
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+Open http://localhost:3000. On Vercel, set the project root to `web` and add `GROQ_API_KEY` and `GROQ_MODEL` as environment variables.
+
 ```bash
 python -m streamlit run app/streamlit_app.py
 python run_queries.py

@@ -1,0 +1,196 @@
+:root {
+  --text: #44475b;
+  --muted: #7c7e8c;
+  --faint: #a1a3ad;
+  --green: #04b488;
+  --green-dark: #00825c;
+  --line: #e9e9eb;
+  --surface: #f8f8f8;
+  --chip: #f0f0f2;
+  --white: #ffffff;
+  color: var(--text);
+  background: var(--surface);
+  font-family: system-ui, "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--surface);
+}
+
+a { color: var(--green); }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: 64px;
+  padding: 0 24px;
+  background: var(--white);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  margin: 0;
+  color: var(--green);
+  font-size: 1.05rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.disclaimer {
+  margin: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--text);
+  font-size: 0.82rem;
+}
+
+main {
+  width: min(840px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 32px 0 48px;
+}
+
+.panel {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 28px;
+}
+
+h1 {
+  margin: 0 0 8px;
+  color: var(--text);
+  font-size: 1.75rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.welcome {
+  margin: 0 0 20px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.examples {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 0 0 24px;
+}
+
+.examples button {
+  min-height: 88px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--white);
+  color: var(--text);
+  text-align: left;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.examples button:hover { background: var(--chip); }
+
+.thread { display: flex; flex-direction: column; gap: 12px; }
+
+.message {
+  max-width: 92%;
+  padding: 12px 14px;
+  border-radius: 12px;
+}
+
+.message p { margin: 0 0 6px; line-height: 1.5; }
+
+.message p:last-child { margin-bottom: 0; }
+
+.user {
+  align-self: flex-end;
+  background: var(--green);
+  color: var(--white);
+}
+
+.assistant {
+  align-self: flex-start;
+  background: var(--white);
+  border: 1px solid var(--line);
+}
+
+.source, .updated, .caption { color: var(--muted); font-size: 0.86rem; }
+
+.assistant .source a { word-break: break-all; }
+
+form {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 14px;
+  color: var(--text);
+  background: var(--white);
+  font: inherit;
+  font-size: 1rem;
+}
+
+input:focus {
+  outline: 2px solid var(--green);
+  border-color: var(--green);
+}
+
+.send {
+  border: 0;
+  border-radius: 8px;
+  padding: 12px 18px;
+  background: var(--green);
+  color: var(--white);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.send:hover { background: var(--green-dark); }
+
+.send:disabled {
+  background: var(--chip);
+  color: var(--faint);
+  cursor: default;
+}
+
+.inspector {
+  margin-top: 20px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.inspector summary { cursor: pointer; color: var(--text); }
+
+.inspector table { width: 100%; margin-top: 8px; border-collapse: collapse; }
+
+.inspector td {
+  border-top: 1px solid var(--line);
+  padding: 8px 6px;
+  vertical-align: top;
+}
+
+.caption { margin: 16px 0 0; text-align: center; }
+
+@media (max-width: 700px) {
+  .topbar { height: auto; padding: 12px 16px; align-items: flex-start; flex-direction: column; }
+  .examples { grid-template-columns: 1fr; }
+  .panel { padding: 18px; }
+  form { flex-direction: column; }
+}

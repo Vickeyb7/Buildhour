@@ -100,7 +100,7 @@ def test_every_refusal_has_one_link_and_no_advice():
 
 
 def test_disclaimer_is_in_the_ui():
-    source = Path("app/streamlit_app.py").read_text(encoding="utf-8")
+    source = Path("web/app/page.jsx").read_text(encoding="utf-8")
     disclaimer = cfg["ui"]["disclaimer"]
     assert disclaimer == "Facts-only. No investment advice."
     assert "disclaimer" in source
