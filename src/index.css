@@ -96,6 +96,8 @@ h1 {
   text-align: left;
   line-height: 1.4;
   cursor: pointer;
+  font: inherit;
+  transition: background 0.15s ease;
 }
 
 .examples button:hover { background: var(--chip); }
@@ -160,6 +162,7 @@ input:focus {
   font: inherit;
   font-weight: 650;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .send:hover { background: var(--green-dark); }
@@ -174,16 +177,68 @@ input:focus {
   margin-top: 20px;
   color: var(--muted);
   font-size: 0.9rem;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
 }
 
-.inspector summary { cursor: pointer; color: var(--text); }
+.inspector summary {
+  cursor: pointer;
+  color: var(--text);
+  font-weight: 600;
+  user-select: none;
+}
 
-.inspector table { width: 100%; margin-top: 8px; border-collapse: collapse; }
+.inspector-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 12px 0 10px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  background: none;
+  border: 1px solid transparent;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.tab-btn:hover {
+  background: var(--chip);
+  color: var(--text);
+}
+
+.tab-btn.active {
+  background: var(--chip);
+  color: var(--green-dark);
+  font-weight: 600;
+  border-color: var(--line);
+}
+
+.inspector table {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.inspector th {
+  text-align: left;
+  padding: 6px;
+  color: var(--text);
+  font-weight: 600;
+  border-bottom: 1px solid var(--line);
+}
 
 .inspector td {
   border-top: 1px solid var(--line);
   padding: 8px 6px;
   vertical-align: top;
+  color: var(--text);
 }
 
 .caption { margin: 16px 0 0; text-align: center; }
