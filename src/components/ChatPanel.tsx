@@ -212,12 +212,30 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
             {busy && (
               <div className="flex gap-3 justify-start">
-                <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white shrink-0 mt-0.5">
-                  <RefreshCw className="w-4 h-4 animate-spin" />
+                <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white shrink-0 mt-0.5 shadow-xs">
+                  <Sparkles className="w-4 h-4 animate-pulse text-emerald-100" />
                 </div>
-                <div className="bg-white border border-slate-200/90 rounded-2xl rounded-tl-xs p-4 shadow-xs text-xs text-slate-500 flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                  <span>Searching official mutual fund sources...</span>
+                <div className="w-full max-w-[85%] rounded-2xl rounded-tl-xs p-4 sm:p-5 bg-white border border-slate-200/90 shadow-xs space-y-3">
+                  {/* Subtle status kicker */}
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                    <span className="text-xs font-medium text-slate-400">
+                      Searching verified statutory documents…
+                    </span>
+                  </div>
+
+                  {/* Skeletal prose lines */}
+                  <div className="space-y-2.5">
+                    <div className="h-3.5 bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 rounded-md w-[92%] animate-pulse"></div>
+                    <div className="h-3.5 bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 rounded-md w-[98%] animate-pulse"></div>
+                    <div className="h-3.5 bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 rounded-md w-[65%] animate-pulse"></div>
+                  </div>
+
+                  {/* Skeletal citation footer */}
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <div className="h-2.5 bg-slate-100 rounded-md w-48 animate-pulse"></div>
+                    <div className="h-2.5 bg-slate-100 rounded-md w-16 animate-pulse"></div>
+                  </div>
                 </div>
               </div>
             )}
