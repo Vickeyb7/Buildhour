@@ -1,328 +1,190 @@
-# Architecture: Mutual Fund FAQ Assistant (RAG Prototype)
+# Architecture: Mutual Fund FAQ Assistant (Hybrid RAG System)
 
-Companion to `PRD.md`. This document describes how the system is built: components, data flow, stored artifacts, configuration, and design decisions.
+Companion to `PRD.md`, `sources.md`, and `implementation.md`. Describes system architecture, data models, offline ingestion, query pipeline, guardrails, and full-stack implementation.
 
 ---
 
 ## 1. Architecture Goals
 
-| Goal | Design response |
+| Goal | Design Response |
 |---|---|
-| Show every RAG stage explicitly | Each phase is a separate, re-runnable module that persists its output to disk |
-| Facts-only, one citation per answer | Source URL travels as chunk metadata from scrape to final answer; the answer is assembled with a single link |
-| Swappable components | Embedding model, vector DB, chunking params and LLM provider are all driven by `config.yaml` and `.env` |
-| No PII, no advice | Guard layer runs before retrieval and before the LLM |
-| Small corpus, simple ops | 5 pages, local ChromaDB, no external services except the LLM API |
+| **Broad & Scheme-Specific Accuracy** | Answers general mutual fund concepts (NAV, SIP, TER, KIM/SID, SEBI categorizations, cut-offs) and scheme-specific parameters without confusion. |
+| **Grounded Citations** | Source URLs travel from ingestion metadata into the final answer; exactly one verified official citation per answer. |
+| **Comprehensive 25-Source Corpus** | 25 curated public pages from AMFI India, SEBI regulations, HDFC AMC factsheets/KIM/SID, and CAMS/ITD. |
+| **Strict Privacy & Safety Guardrails** | Multi-tier guard layer runs before retrieval or LLM execution to block PII (PAN, Aadhaar, OTPs, folios) and refuse personal financial advice. |
+| **Dual-Stack Flexibility** | Full-stack production React + Express app (port 3000) with server-side Gemini 3.8 Flash grounding, plus Python CLI ingestion and test scripts. |
+| **Responsive Skeletal UI** | Skeletal chat bubbles matching response geometry provide smooth visual feedback during retrieval. |
+
+---
 
 ## 2. System Context
 
 ```
-                    ┌──────────────────────────────────────────────┐
-                    │                 Public web                   │
-                    │  5 Groww pages (+ reference links, not        │
-                    │  scraped, used only as refusal/edu links)     │
-                    └───────────────────────┬──────────────────────┘
-                                            │ scrape (offline, one-time / on demand)
-                                            ▼
-┌────────┐   question   ┌────────────────────────────────┐   API call   ┌──────────────┐
-│  User  │ ───────────► │  FAQ Assistant (local app)     │ ───────────► │  LLM (Groq;  │
-│        │ ◄─────────── │  UI + guards + retriever + LLM │ ◄─────────── │  pluggable)  │
-└────────┘   answer +   │  client + ChromaDB             │   response   └──────────────┘
-             1 link     └────────────────────────────────┘
+                    ┌─────────────────────────────────────────────────────────┐
+                    │               Official Regulatory & AMC Web             │
+                    │   25 Pages: AMFI, SEBI Circulars, HDFC AMC, CAMS, ITD   │
+                    └────────────────────────────┬────────────────────────────┘
+                                                 │ Scrape & Ingestion (offline / on-demand)
+                                                 ▼
+┌────────┐   Question    ┌──────────────────────────────────────────────┐   API Call   ┌───────────────────────────┐
+│  User  │ ────────────► │  Full-Stack Mutual Fund Assistant            │ ───────────► │  Server-Side Gemini LLM   │
+│ Client │ ◄──────────── │  React + Express (Port 3000)                 │ ◄─────────── │  (gemini-3.8-flash)       │
+└────────┘   Answer +    │  - PII & Advice Guards                       │   Response   └───────────────────────────┘
+             1 Citation  │  - 16 Built-in AMFI/SEBI Core Concepts       │
+                         │  - ChromaDB (89 chunks, 384-dim MiniLM-L6)   │
+                         │  - Local Grounded Fallback Engine            │
+                         └──────────────────────────────────────────────┘
 ```
 
-The system has two pipelines that share the same embedding model and vector store:
+The system operates across two pipelines:
+1. **Ingestion Pipeline (Offline / Reproducible):** Scrape 25 documents &rarr; Structure-aware chunking (89 chunks) &rarr; 384-dim embeddings (`all-MiniLM-L6-v2`) &rarr; ChromaDB SQLite & `.npy` storage.
+2. **Query Pipeline (Online / Real-Time):** PII Guard &rarr; Intent/Advice Guard &rarr; Statement Routing &rarr; Concept Matcher &rarr; Vector & Lexical Retriever &rarr; Grounded Synthesis &rarr; Formatter with Citation.
 
-1. **Ingestion pipeline (offline):** Load → Chunk → Embed → Store
-2. **Query pipeline (online):** Guard → Retrieve → Generate → Format
+---
 
 ## 3. Ingestion Pipeline
 
-Each phase reads the previous phase's stored output, so any phase can be re-run or demonstrated alone.
+Every stage writes its output explicitly to disk for auditability and verification:
 
 ```
-Phase 1            Phase 2             Phase 3                Phase 4
-Data Loading  ──►  Data Chunking  ──►  Data Embedding   ──►   Vector Store
-(scrape 5 pages)   (structure-aware)   (MiniLM-L6-v2)         (ChromaDB)
-     │                  │                    │                    │
-     ▼                  ▼                    ▼                    ▼
-data/raw/          data/chunks/         data/embeddings/      data/chroma/
-*.html             chunks.jsonl         vectors + ids         persistent collection
-manifest.json
+Phase 1               Phase 2                Phase 3                   Phase 4
+Data Loading    ──►   Data Chunking    ──►   Data Embedding      ──►   Vector Store
+(25 Sources)          (89 Chunks)            (all-MiniLM-L6-v2)        (ChromaDB SQLite)
+     │                     │                      │                         │
+     ▼                     ▼                      ▼                         ▼
+data/raw/             data/chunks/           data/embeddings/          data/chroma/
+*.html (25 files)     chunks.jsonl           vectors.npy (89, 384)     chroma.sqlite3
+manifest.json                                ids.json, meta.json       src/data/corpus.json
 ```
 
-### 3.1 Phase 1: Data Loading
-- **Input:** list of 5 URLs from `config.yaml`.
-- **Behavior:** fetch each page once; do **not** follow internal links. Pages may be JS-rendered, so use plain HTTP first and fall back to a headless browser only if the content is missing from the HTML.
-- **Output:** raw HTML per page plus `manifest.json` recording `url`, `scheme_name`, `page_type` (amc | scheme), `scraped_at`, `http_status`, `content_hash`.
-- **Failure handling:** a failed page is recorded in the manifest and the run reports it; it never silently drops.
+### 3.1 Phase 1: Data Loading (25 Sources)
+- **Sources**: 25 official URLs documented in `sources.md` and `sources.csv`:
+  - 6 AMC Scheme & Document pages (HDFC Large Cap, Mid Cap, Flexi Cap, ELSS, AMC Overview, SID/KIM).
+  - 12 AMFI Educational & Regulatory pages (NAV, TER, Exit Load, SIP, SWP, STP, Direct vs Regular, Index Funds, Cut-off Timings, Risk-o-meter, Code of Conduct, KIM/SID guide).
+  - 4 SEBI Regulatory circulars (Categorization of MF schemes, market cap definitions, TER slabs, riskometer rules).
+  - 3 Statement and Taxation pages (CAMS CAS, KFintech portal, Income Tax Department capital gains).
+- **Output**: Raw HTML snapshots in `data/raw/<slug>.html` and provenance log in `data/raw/manifest.json`.
 
-### 3.2 Phase 2: Data Chunking
-The strategy is chosen based on the data, which comes in two shapes:
+### 3.2 Phase 2: Data Chunking (89 Chunks)
+- **Fact-Level Scheme Chunks**: Self-describing, scheme-prefixed strings (e.g. `"HDFC Large Cap Fund Direct Growth – Expense ratio: 1.02%"`).
+- **Regulatory / Narrative Chunks**: Bounded paragraphs (max 800 characters) preserving exact percentages, cut-off times, and statutory definitions.
+- **Contract Schema** (`data/chunks/chunks.jsonl`):
+  ```json
+  {
+    "chunk_id": "sebi-categorization...__sebi_categorization_and_market_cap_rules__01",
+    "text": "SEBI Scheme Categorization: Equity funds are categorized by market cap: Large Cap funds invest at least 80% in top 100 companies by market cap; Mid Cap funds invest at least 65% in 101st to 250th companies...",
+    "source_url": "https://www.sebi.gov.in/legal/circulars/oct-2017/categorization-and-rationalization-of-mutual-fund-schemes_36199.html",
+    "scheme_name": "SEBI Categorization and Rationalization of Mutual Fund Schemes",
+    "page_type": "regulation",
+    "section": "sebi_categorization_and_market_cap_rules",
+    "scraped_at": "2026-11-04T12:00:00.000000+00:00"
+  }
+  ```
 
-| Content shape | Strategy | Reason |
-|---|---|---|
-| Structured scheme facts (expense ratio, exit load, min SIP, lock-in, riskometer, benchmark, fund manager, AUM) | **Field-level chunks**: one small chunk per fact or tight group of related facts, prefixed with the scheme name (e.g. "HDFC Large Cap Fund Direct Growth – Exit load: …") | Questions target a single fact; small, self-describing chunks retrieve precisely and keep the scheme name in the embedded text |
-| Narrative text (fund overview, AMC description, FAQ-style text) | **Section/paragraph chunks** with a size cap and small overlap (parameters in config) | Preserves context for longer passages |
+### 3.3 Phase 3: Vector Embeddings
+- **Model**: `sentence-transformers/all-MiniLM-L6-v2` (384-dim vectors, L2-normalized).
+- **Artifacts**:
+  - `data/embeddings/vectors.npy`: 136,832-byte NumPy float32 binary array of shape `(89, 384)`.
+  - `data/embeddings/ids.json`: List of 89 chunk identifiers.
+  - `data/embeddings/meta.json`: `{"model": "sentence-transformers/all-MiniLM-L6-v2", "dim": 384, "count": 89}`.
+  - `src/data/corpus.json`: Embedded dataset bundled for fast zero-latency in-memory lookup.
 
-Every chunk carries metadata:
+### 3.4 Phase 4: Vector Store (ChromaDB)
+- **Engine**: Persistent ChromaDB SQLite database (`data/chroma/chroma.sqlite3`).
+- **HNSW Space**: Cosine similarity index (`metadata={"hnsw:space": "cosine"}`).
+- **Sync Log**: Documented in `data/chunking_and_embeddings.txt`.
 
-```json
-{
-  "chunk_id": "hdfc-large-cap__exit-load__01",
-  "text": "HDFC Large Cap Fund Direct Growth – Exit load: …",
-  "source_url": "https://groww.in/mutual-funds/hdfc-large-cap-fund-direct-growth",
-  "scheme_name": "HDFC Large Cap Fund Direct Growth",
-  "page_type": "scheme",
-  "section": "exit_load",
-  "scraped_at": "2026-11-03T…"
-}
-```
-
-The coding agent may refine the extraction rules after inspecting the real HTML; the metadata schema above is the fixed contract.
-
-### 3.3 Phase 3: Data Embedding
-- Model: `sentence-transformers/all-MiniLM-L6-v2` (384-dim), loaded by name from config.
-- Embeds the `text` field of each chunk in batches.
-- Output stored explicitly (vectors with `chunk_id` mapping) so the stage can be shown without touching ChromaDB.
-
-### 3.4 Phase 4: Vector Store
-- ChromaDB persistent client, collection name from config.
-- Stores `chunk_id` (id), vector, `text` (document) and the metadata above.
-- Ingestion is idempotent: re-running upserts by `chunk_id`; a `--reset` flag rebuilds the collection.
-- The embedding model name is stored in collection metadata, and the query pipeline checks it matches at startup to prevent model mismatch.
+---
 
 ## 4. Query Pipeline
 
 ```
-User input
+User Input
    │
-   ▼
-┌────────────────────┐  PII found   ┌───────────────────────────────┐
-│ 1. PII guard       │ ───────────► │ Reject; warn; nothing stored  │
-└─────────┬──────────┘              └───────────────────────────────┘
-          │ clean
-          ▼
-┌────────────────────┐  advice /    ┌───────────────────────────────┐
-│ 2. Intent guard    │  opinion /   │ Polite refusal + 1 educational│
-│  (factual vs not)  │  returns ──► │ link                          │
-└─────────┬──────────┘              └───────────────────────────────┘
-          │ factual
-          ▼
-┌────────────────────┐
-│ 3. Retriever       │  embed query (same MiniLM) → ChromaDB top-k
-│                    │  optional scheme filter from detected scheme name
-└─────────┬──────────┘
-          ▼
-┌────────────────────┐  no relevant   ┌─────────────────────────────┐
-│ 4. Relevance check │  chunks ─────► │ "Not found in sources" +    │
-│  (score threshold) │                │ nearest relevant page link  │
-└─────────┬──────────┘                └─────────────────────────────┘
-          ▼
-┌────────────────────┐
-│ 5. LLM generation  │  grounded prompt: answer only from context
-└─────────┬──────────┘
-          ▼
-┌────────────────────┐
-│ 6. Formatter       │  ≤3 sentences · exactly 1 source link ·
-│  & validator       │  "Last updated from sources: <date>"
-└─────────┬──────────┘
-          ▼
-        Answer
+   ├── 1. PII Guard ───────────────► Found? Reject & show privacy warning (zero logging)
+   │
+   ├── 2. Intent Guard ────────────► Advice / returns? Politely refuse + AMFI guidance link
+   │
+   ├── 3. Statement Route ─────────► Statement question? Fixed response + CAMS/KFintech link
+   │
+   ├── 4. Concept Matcher ─────────► Matches core MF concept? Return verified standard definition
+   │
+   ├── 5. Hybrid Retriever ────────► Score 89 chunks across 25 sources (threshold ≥ 0.25, top-k 4)
+   │
+   ├── 6. LLM Synthesis ──────────► Gemini 3.8 Flash (with verified context grounding)
+   │                                 or grounded local fallback engine
+   │
+   └── 7. Formatter ───────────────► ≤3 sentences · exactly 1 official URL · source date
 ```
 
-### 4.1 PII guard
-Regex-based detection for PAN (`[A-Z]{5}[0-9]{4}[A-Z]`), Aadhaar (12 digits, with or without spaces), phone numbers, emails, OTP-like 4–8 digit codes in an "OTP" context, and long account-number-like digit strings. On a match the message is dropped, a warning is shown, and the text is **never** logged, embedded or sent to the LLM.
+### 4.1 PII Guard
+Blocks personal identifiers using strict regex boundaries:
+- **PAN**: `\b[A-Z]{5}[0-9]{4}[A-Z]\b`
+- **Aadhaar**: `\b\d{4}\s?\d{4}\s?\d{4}\b`
+- **Phone**: `(?<!\d)(?:\+?91[\s-]?)?[6-9]\d{9}(?!\d)`
+- **Email**: `[\w.+-]+@[\w-]+\.[\w.-]+`
+- **OTP**: `(?i)\botp\b.{0,20}\b\d{4,8}\b`
+- **Account / Folio**: `\b\d{9,18}\b`
 
-### 4.2 Intent guard
-A two-layer check:
-1. **Rule layer (cheap):** keyword/pattern match for advice and performance intent (should I, buy, sell, best fund, which is better, returns, will it grow, my portfolio).
-2. **LLM classifier (fallback for ambiguous cases):** a short prompt returning `FACTUAL` or `REFUSE`, using the same pluggable LLM client.
+### 4.2 Intent & Advice Guard
+- Intercepts requests for personalized financial advice, portfolio reviews, or return predictions.
+- Returns factual guidance citing official AMFI investor education:
+  *"I can share factual and educational information, but not personalized investment advice. Consider consulting a SEBI-registered investment advisor."*
 
-Refusal categories and their educational links:
+### 4.3 Concept Matcher & Hybrid Retriever
+- **16 Core MF Concepts**: Immediate factual definitions for NAV, Expense Ratio, Exit Load, SIP, SWP, STP, Direct vs Regular, ELSS, Index Funds, SEBI Categories, Taxation, Cut-off Timings, AMC, KIM/SID, Risk-o-meter, and CAS.
+- **Retriever Scoring**:
+  - Section keyword match (`0.45` weight): `nav_concept`, `cut_off_timing_rules`, `sid_purpose`, `kim_purpose`, `expense_ratio`, `sebi_categorization_and_market_cap_rules`.
+  - Semantic token overlap (`0.35` weight).
+  - Scheme isolation: Applies metadata filtering only when specific scheme terms (e.g., "HDFC Large Cap") are queried without general SEBI or definition terms.
 
-| Category | Example | Response |
-|---|---|---|
-| Advice / opinion | "Should I buy this fund?" | Facts-only message + link to an official investor-education page |
-| Portfolio / personal | "Is my SIP good?" | Same, as no personal data is handled |
-| Performance / returns | "Which fund gave better returns?" | No computation; link to the scheme's official factsheet |
+### 4.4 Formatter & Validator
+- Enforces maximum 3 sentences.
+- Strips any hallucinated URLs from model output and appends the single verified `source_url`.
+- Appends source verification date.
 
-### 4.3 Retriever
-- Embeds the query with the same model as ingestion.
-- Returns top-k chunks (k from config) with similarity scores.
-- If the query names a scheme (matched against the known scheme list), a metadata filter on `scheme_name` is applied so, for example, "exit load" for ELSS doesn't return the Mid Cap chunk.
-- If no scheme is named and the question is scheme-specific, the assistant asks which scheme (or answers from the AMC page where relevant).
+---
 
-### 4.4 LLM generation
-- Provider layer exposes one interface, `generate(system_prompt, user_prompt) -> text`, with adapters for Groq (default), Gemini, OpenAI, Anthropic and Mistral selected by config.
-- Model name for the active provider is read from `.env`.
-- **Prompt rules (system prompt summary):**
-  - Answer only from the provided context; if absent, say it isn't available in the sources.
-  - Facts only; never recommend, compare returns or predict.
-  - Maximum 3 sentences.
-  - Do not include URLs or dates; the formatter adds them.
-
-### 4.5 Formatter and validator
-The **source link and date are attached by code, not by the LLM**, which keeps citations reliable:
-- Link = `source_url` of the top chunk that supported the answer.
-- Date = `scraped_at` of that page.
-- Validator enforces ≤3 sentences (truncate or regenerate once), exactly one link, and the "Last updated from sources" line. If the check fails after one retry, fall back to a templated answer from the top chunk.
-
-Final shape:
-```
-<≤3 sentence answer>
-Source: <one URL>
-Last updated from sources: <date>
-```
-
-## 5. Component Layout
+## 5. Technology Stack & Component Structure
 
 ```
 project/
-├── config.yaml              # all tunables (see §6)
-├── .env / .env.example      # API keys, active LLM provider + model name
-├── data/
-│   ├── raw/                 # Phase 1 output
-│   ├── chunks/              # Phase 2 output
-│   ├── embeddings/          # Phase 3 output
-│   └── chroma/              # Phase 4 output (persistent ChromaDB)
+├── server.ts                       # Express backend (port 3000), Vite dev server, Gemini 3.8 RAG
+├── vite.config.ts                  # Vite config with @tailwindcss/vite
+├── index.html                      # Entry HTML with Plus Jakarta Sans & JetBrains Mono fonts
 ├── src/
-│   ├── ingestion/
-│   │   ├── loader.py        # Phase 1
-│   │   ├── chunker.py       # Phase 2
-│   │   ├── embedder.py      # Phase 3
-│   │   └── indexer.py       # Phase 4
-│   ├── query/
-│   │   ├── guards.py        # PII + intent guards
-│   │   ├── retriever.py
-│   │   ├── prompts.py
-│   │   ├── formatter.py     # citation, date, ≤3-sentence validation
-│   │   └── pipeline.py      # orchestrates the query flow
-│   ├── llm/
-│   │   ├── base.py          # provider interface
-│   │   ├── groq_client.py
-│   │   └── (gemini|openai|anthropic|mistral)_client.py
-│   └── config.py            # config + env loading
-├── app/                     # UI (Streamlit / Gradio / notebook)
-├── run_ingestion.py         # CLI: run all phases or one (--phase 1..4)
-├── sample_qa.md
-├── sources.md
-└── README.md
+│   ├── App.tsx                     # Main React application
+│   ├── index.css                   # Tailwind CSS v4 design tokens and base styles
+│   ├── components/
+│   │   ├── TopBar.tsx              # Clean top navigation with "Clear chat" action
+│   │   └── ChatPanel.tsx           # Chat thread, prompt suggestions, skeletal loading bubble
+│   ├── lib/
+│   │   ├── ask.ts                  # Query pipeline, guards, and scoring algorithms
+│   │   └── knowledge.ts            # 16 standardized AMFI/SEBI concepts
+│   └── data/                       # Synchronized corpus, manifest, metadata, and config
+├── data/                           # Raw HTML, chunks.jsonl, vectors.npy, and ChromaDB SQLite
+├── Docs/                           # PRD.md, architecture.md, implementation.md
+├── sources.md & sources.csv        # Complete 25-source documentation
+└── sample_qa.md                    # Verified test questions and responses
 ```
 
-## 6. Configuration
+---
 
-`config.yaml` (non-secret) and `.env` (secret):
+## 6. User Interface Architecture
 
-```yaml
-sources:
-  scrape_urls: [ ...5 URLs... ]
-  reference_links: [ ...educational/factsheet links, not scraped... ]
+- **Clean Single-Column Workspace**: Focused `max-w-4xl` layout adhering to the *Zero-Pill Discipline* and *Anti-AI Slop Constitution*.
+- **Skeletal Loading Feedback**:
+  - Replaces mechanical spinning wheels with a conversational skeletal placeholder.
+  - Renders 3 varied-length animated gradient shimmer lines (`92%`, `98%`, `65%`) and placeholder citation footer.
+  - Matches assistant response geometry to eliminate layout shift and lower perceived latency.
+- **Top Bar Contract**: Wordmark brand zone (*Mutual Fund FAQ Assistant · AMFI & SEBI Grounded*) + quiet contextual label + primary "Clear chat" action button.
+- **Interactive Affordances**: Categorized sample inquiries, one-click answer copying, and direct links to official documents.
 
-chunking:
-  structured_strategy: field_level
-  narrative_max_chars: 800
-  narrative_overlap_chars: 100
+---
 
-embedding:
-  model_name: sentence-transformers/all-MiniLM-L6-v2
+## 7. Security, Privacy & Compliance
 
-vector_db:
-  type: chroma
-  path: data/chroma
-  collection: hdfc_mf_faq
-
-retrieval:
-  top_k: 4
-  min_score: 0.30
-  scheme_filter: true
-
-llm:
-  provider: groq            # groq | gemini | openai | anthropic | mistral
-  temperature: 0.0
-  max_output_tokens: 200
-
-ui:
-  disclaimer: "Facts-only. No investment advice."
-```
-
-```
-# .env
-GROQ_API_KEY=...
-GROQ_MODEL=qwen/qwen3.8-27b      # verify against Groq's model list
-GEMINI_API_KEY= / OPENAI_API_KEY= / ANTHROPIC_API_KEY= / MISTRAL_API_KEY=
-```
-
-## 7. Data Model Summary
-
-| Artifact | Format | Key fields |
-|---|---|---|
-| Raw page | `.html` + `manifest.json` | url, scheme_name, page_type, scraped_at, content_hash |
-| Chunk | JSONL | chunk_id, text, source_url, scheme_name, page_type, section, scraped_at |
-| Embedding | vectors + id map | chunk_id → 384-dim vector |
-| Chroma record | collection entry | id, embedding, document, metadata (as chunk) |
-| Q&A log (optional, PII-free) | JSONL | query (post-guard), intent, retrieved chunk_ids, answer, source_url |
-
-## 8. UI
-
-Minimal single page:
-- Welcome line and **3 clickable example questions** (e.g. "Expense ratio of HDFC Large Cap Fund?", "ELSS lock-in period?", "How do I download a capital-gains statement?").
-- Chat input and answer panel with a clickable citation link.
-- Persistent footer note: **"Facts-only. No investment advice."**
-- A "pipeline inspector" tab or section (optional but useful for the demo) that shows the stored output of each ingestion phase and the retrieved chunks and scores for the latest query.
-
-## 9. Security and Privacy
-
-- PII guard runs first; blocked input is never persisted, logged or sent to any provider.
-- Secrets only in `.env` (gitignored); `.env.example` committed.
-- Only public pages are scraped; no authenticated or back-end sources.
-- Logs store post-guard queries only, and logging can be disabled in config.
-
-## 10. Error Handling
-
-| Situation | Behavior |
-|---|---|
-| Page fails to scrape | Recorded in manifest; run reports it; other pages continue |
-| Embedding model mismatch between index and query | Startup check fails with a clear message |
-| No chunk above `min_score` | "Not found in the sources" reply with the nearest relevant page link |
-| LLM API error or timeout | One retry, then a templated answer from the top chunk, or an error message |
-| Output fails validation | One regeneration, then template fallback |
-| Question names no scheme but needs one | Ask the user to pick a scheme (examples shown) |
-
-## 11. Testing and Evaluation
-
-- **Unit tests:** PII regexes, intent rules, formatter/validator (sentence count, single link, date line), chunker output schema.
-- **Retrieval check:** for a fixed set of 10–15 questions, assert the expected scheme and section appear in the top-k.
-- **End-to-end:** the 5–10 query sample Q&A set (including 1–2 refusals and 1 PII case), checked manually against the live pages.
-- **Acceptance** maps to PRD §9: 100% single-link and ≤3-sentence compliance, correct refusals, PII never stored, config-only swaps for model/DB/LLM.
-
-## 12. Design Decisions and Trade-offs
-
-| Decision | Rationale | Trade-off |
-|---|---|---|
-| Citations attached by code, not LLM | Prevents hallucinated or multiple links | Slightly less flexible phrasing |
-| Field-level chunks with scheme name prefixed | Precise retrieval on a tiny corpus with near-identical scheme pages | More chunks; needs extraction rules tuned to page HTML |
-| Scheme metadata filter | Avoids cross-scheme answers (very likely failure mode) | Requires scheme-name detection |
-| Rule-first intent guard, LLM fallback | Fast, cheap, predictable refusals | Rules need tuning to avoid false positives |
-| Persist each stage's output | Meets the "show each RAG stage" demo requirement | Extra files on disk |
-| Local ChromaDB, small MiniLM model | Zero infra, runs on a laptop | Lower retrieval quality than larger models; acceptable for 5 pages |
-
-## 13. Risks and Open Items
-
-- **JS-rendered pages:** scraping may need a headless browser; verify early.
-- **Page structure drift:** extraction rules may break if Groww changes its layout; the manifest `content_hash` helps detect change.
-- **Statement-download questions:** may not be answerable from the 5 pages; needs an official help page as a reference link (see PRD Open Question 3).
-- **Model name:** `qwen/qwen3.8-27b` should be verified on Groq; it is isolated in `.env`.
-- **"Last updated" semantics:** assumed to be the scrape date of the cited page.
-
-## 14. Build Order (suggested)
-
-1. Config + project skeleton + `.env.example`
-2. Phase 1 loader, then inspect real HTML
-3. Phase 2 chunker (finalize extraction rules from the real HTML)
-4. Phases 3–4 embedder and indexer, with `run_ingestion.py`
-5. Retriever and a CLI query to verify retrieval quality
-6. LLM client (Groq first), prompts, formatter/validator
-7. Guards (PII, intent) and refusal links
-8. UI and pipeline inspector
-9. Sample Q&A, sources list, README, demo
+- **Zero PII Exposure**: Personal details are stripped before processing and never logged or stored.
+- **Official Grounding Only**: Model generation constrained to verified context from the 25 official documents and 16 concepts.
+- **No Autonomous Advice**: Refuses portfolio management or scheme recommendations under SEBI investment advisor norms.
+- **Safe Environment**: Secrets maintained strictly in server-side environment variables; client communicates via local API proxy (`/api/ask`).
