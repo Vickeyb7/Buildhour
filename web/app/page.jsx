@@ -25,7 +25,16 @@ export default function HomePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: trimmed }),
       });
-      const answer = await response.json();
+      const raw = await response.text();
+      let answer;
+      try {
+        answer = raw ? JSON.parse(raw) : null;
+      } catch {
+        answer = null;
+      }
+      if (!answer || typeof answer.body !== "string") {
+        answer = { kind: "error", body: "The answer service failed.", source_url: null, updated: null, chunks: [] };
+      }
       const userText = answer.kind === "pii" ? "Personal details were removed." : trimmed;
       setMessages((current) => [...current, { role: "user", body: userText }, answer]);
       setChunks(answer.chunks || []);

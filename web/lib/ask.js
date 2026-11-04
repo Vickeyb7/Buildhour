@@ -1,8 +1,5 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-
-const config = JSON.parse(readFileSync(join(process.cwd(), "data", "app-config.json"), "utf8"));
-const corpus = JSON.parse(readFileSync(join(process.cwd(), "data", "corpus.json"), "utf8"));
+import config from "../data/app-config.json";
+import corpus from "../data/corpus.json";
 
 const PII_MESSAGE =
   "Please don't share personal details like PAN, Aadhaar, account numbers, OTPs, emails or phone numbers. I only answer general factual questions.";
@@ -165,9 +162,11 @@ function result(kind, body, extra = {}) {
 
 async function embed(text) {
   if (!embedderPromise) {
-    embedderPromise = import("@huggingface/transformers").then(({ pipeline }) =>
-      pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2", { dtype: "fp32" }),
-    );
+    embedderPromise = import("@huggingface/transformers").then(({ pipeline, env }) => {
+      env.cacheDir = "/tmp/transformers-cache";
+      env.allowLocalModels = false;
+      return pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2", { dtype: "fp32" });
+    });
   }
   const embedder = await embedderPromise;
   const output = await embedder(text, { pooling: "mean", normalize: true });
