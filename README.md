@@ -32,7 +32,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000. On Vercel, set the project root to `web` and add `GROQ_API_KEY` and `GROQ_MODEL` as environment variables.
+Open http://localhost:3000. On Vercel, leave the project root as the repository root. `vercel.json` builds the Next.js app in `web/`. Add `GROQ_API_KEY` and `GROQ_MODEL` as environment variables.
 
 ```bash
 python -m streamlit run app/streamlit_app.py
