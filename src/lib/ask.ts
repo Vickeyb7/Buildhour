@@ -1,5 +1,6 @@
 import config from "../data/app-config.json";
 import corpusData from "../data/corpus.json";
+import { findMatchingConcept } from "./knowledge";
 
 export interface Chunk {
   chunk_id: string;
@@ -33,7 +34,7 @@ export interface StoredChunk {
 const corpus: StoredChunk[] = corpusData as StoredChunk[];
 
 export const PII_MESSAGE =
-  "Please don't share personal details like PAN, Aadhaar, account numbers, OTPs, emails or phone numbers. I only answer general factual questions.";
+  "Please don't share personal details like PAN, Aadhaar, account numbers, OTPs, emails or phone numbers. I only answer general factual and educational questions.";
 
 const PII_PATTERNS = [
   /\b[A-Z]{5}[0-9]{4}[A-Z]\b/,
@@ -45,34 +46,28 @@ const PII_PATTERNS = [
 ];
 
 const ADVICE = [
-  /should i/,
-  /\bbuy\b/,
-  /\bsell\b/,
-  /\bhold\b/,
-  /best fund/,
-  /which is better/,
-  /which fund is better/,
-  /\bbetter\b/,
-  /\brecommend/,
-  /good investment/,
+  /should i buy/i,
+  /should i sell/i,
+  /should i invest/i,
+  /\bbuy this fund\b/i,
+  /\bsell my\b/i,
+  /which fund will give best returns/i,
+  /tell me which fund to pick/i,
+  /guaranteed return/i,
 ];
 
-const PORTFOLIO = [/my portfolio/, /my sip/, /my holdings/, /my investment/];
+const PORTFOLIO = [/my portfolio/i, /review my holdings/i, /is my sip good/i];
 
-const PERFORMANCE = [
-  /\breturns\b/,
-  /\bperformance\b/,
-  /\bcagr\b/,
-  /how much will i earn/,
-  /will it go up/,
-  /go up/,
-  /compare returns/,
+const PERFORMANCE_PREDICTIONS = [
+  /how much will i earn next year/i,
+  /will it go up tomorrow/i,
+  /predict return/i,
 ];
 
 const REFUSALS: Record<string, string> = {
-  advice: "I can only share facts, not investment advice.",
-  portfolio: "I can't review personal portfolios; I only provide general factual information.",
-  performance: "I don't compute or compare returns. See the official factsheet.",
+  advice: "I can share factual and educational information, but not personalized investment advice. Consider consulting a SEBI-registered investment advisor.",
+  portfolio: "I can't review personal portfolios; I provide general mutual fund information and factual data.",
+  performance: "I don't compute or predict future returns. Please see the official scheme factsheets for historical performance.",
 };
 
 const SCHEME_RULES: [string, string][] = [
@@ -84,9 +79,6 @@ const SCHEME_RULES: [string, string][] = [
   ["mid cap", "Mid Cap"],
   ["midcap", "Mid Cap"],
 ];
-
-const FACT_TERMS = ["expense ratio", "exit load", "lock-in", "lock in", "riskometer", "benchmark"];
-const UNKNOWN_TERMS = ["small cap", "multi cap", "value fund", "focused fund", "sectoral"];
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -108,11 +100,6 @@ export function detectSchemes(query: string): string[] {
   return found;
 }
 
-export function needsScheme(query: string): boolean {
-  const text = query.toLowerCase();
-  return FACT_TERMS.some((term) => text.includes(term)) || /\bsip\b/.test(text);
-}
-
 export function hasPii(text: string): boolean {
   return PII_PATTERNS.some((pattern) => pattern.test(text));
 }
@@ -122,14 +109,14 @@ export function intentRefusal(text: string): { category: string; message: string
   const checks: [string, RegExp[], string][] = [
     ["advice", ADVICE, "advice"],
     ["portfolio", PORTFOLIO, "advice"],
-    ["performance", PERFORMANCE, "factsheet"],
+    ["performance", PERFORMANCE_PREDICTIONS, "factsheet"],
   ];
   for (const [category, patterns, linkKey] of checks) {
     if (patterns.some((pattern) => pattern.test(folded))) {
       return {
         category,
         message: REFUSALS[category],
-        link: (config.reference_links as Record<string, string>)[linkKey],
+        link: (config.reference_links as Record<string, string>)[linkKey] || "https://www.amfiindia.com",
       };
     }
   }
@@ -198,12 +185,8 @@ function result(kind: Answer["kind"], body: string, extra: Partial<Answer> = {})
   };
 }
 
-/**
- * Normalize text for token search, including common typos.
- */
 function normalizeQuery(query: string): string {
   let q = query.toLowerCase();
-  // Typo corrections
   q = q.replace(/\bkap\b/g, "cap");
   q = q.replace(/\blod\b/g, "load");
   q = q.replace(/\beksit\b/g, "exit");
@@ -238,7 +221,6 @@ export function scoreChunk(chunk: StoredChunk, query: string, targetScheme?: str
 
   if (!qWords.length) return 0;
 
-  // If a specific scheme is targeted and this chunk doesn't match, score is 0
   if (targetScheme && chunk.scheme_name !== targetScheme) {
     return 0;
   }
@@ -247,7 +229,6 @@ export function scoreChunk(chunk: StoredChunk, query: string, targetScheme?: str
   const chunkTextLower = chunk.text.toLowerCase();
   const chunkSection = chunk.section.toLowerCase();
 
-  // Section match is a strong signal
   const sectionKeywords = SECTION_KEYWORDS[chunkSection] || [];
   let hasSectionMatch = false;
   for (const kw of sectionKeywords) {
@@ -258,7 +239,6 @@ export function scoreChunk(chunk: StoredChunk, query: string, targetScheme?: str
     }
   }
 
-  // Scheme name match bonus
   const chunkSchemeLower = chunk.scheme_name.toLowerCase();
   for (const [kw, marker] of SCHEME_RULES) {
     if (normQ.includes(kw) && chunkSchemeLower.includes(marker.toLowerCase())) {
@@ -267,10 +247,10 @@ export function scoreChunk(chunk: StoredChunk, query: string, targetScheme?: str
     }
   }
 
-  // Word overlap
+  const chunkWords = chunkTextLower.split(/[^a-z0-9]+/);
   let matchedWords = 0;
   for (const word of qWords) {
-    if (chunkTextLower.includes(word)) {
+    if (chunkWords.includes(word)) {
       matchedWords += 1;
     }
   }
@@ -278,7 +258,6 @@ export function scoreChunk(chunk: StoredChunk, query: string, targetScheme?: str
     score += (matchedWords / qWords.length) * 0.35;
   }
 
-  // Unrelated check: if query has no matching keywords or overlap
   if (!hasSectionMatch && matchedWords === 0) {
     return 0.05;
   }
@@ -330,21 +309,13 @@ export function retrieveAll(query: string, schemeNames: string[]): Chunk[] {
   return merged.sort((a, b) => b.score - a.score).slice(0, topK);
 }
 
-export function publicConfig() {
-  return {
-    disclaimer: config.ui.disclaimer,
-    welcome: config.ui.welcome,
-    examples: config.ui.examples,
-    chunkCount: corpus.length,
-  };
-}
-
 export async function answerQuestion(rawQuery: string): Promise<Answer> {
   if (!rawQuery || !rawQuery.trim()) {
-    return result("clarify", "Please type a question.");
+    return result("clarify", "Please type a question about mutual funds.");
   }
   const query = rawQuery.trim();
 
+  // PII guardrail
   if (hasPii(query)) {
     return result("pii", PII_MESSAGE);
   }
@@ -353,11 +324,10 @@ export async function answerQuestion(rawQuery: string): Promise<Answer> {
     return result("clarify", "Please shorten your question to under 1000 characters.");
   }
 
+  // Refusal check for explicit advice solicitation
   const refused = intentRefusal(query);
   const named = detectSchemes(query);
-  const factAndAdvice = Boolean(refused && needsScheme(query) && named.length > 0);
-
-  if (refused && !factAndAdvice) {
+  if (refused && !named.length) {
     return result("refusal", refused.message, { source_url: refused.link });
   }
 
@@ -369,18 +339,18 @@ export async function answerQuestion(rawQuery: string): Promise<Answer> {
     );
   }
 
-  if (UNKNOWN_TERMS.some((term) => query.toLowerCase().includes(term)) && !named.length) {
-    return result("refusal", `I only have information on these schemes: ${schemeList()}.`, {
-      source_url: amcUrl(),
+  // Check general mutual fund concept first
+  const concept = findMatchingConcept(query);
+  if (concept && !named.length) {
+    return result("answer", concept.summary, {
+      source_url: concept.sourceUrl,
+      updated: null,
+      chunks: [],
     });
   }
 
-  if (isUnintelligible(query) && !named.length && !needsScheme(query)) {
-    return result("clarify", "I couldn't understand that. Please ask a factual question about one of the HDFC schemes.");
-  }
-
-  if (needsScheme(query) && !named.length) {
-    return result("clarify", `Which scheme do you mean? I have information on ${schemeList()}.`);
+  if (isUnintelligible(query) && !named.length && !concept) {
+    return result("clarify", "I couldn't understand that. Please ask a factual question about mutual funds or schemes.");
   }
 
   if (/\bage\b/i.test(query)) {
@@ -391,16 +361,18 @@ export async function answerQuestion(rawQuery: string): Promise<Answer> {
 
   const chunks = retrieveAll(query, named);
   if (!chunks.length) {
+    if (concept) {
+      return result("answer", concept.summary, {
+        source_url: concept.sourceUrl,
+      });
+    }
     return result("not_found", "I couldn't find this in the available sources.", {
       source_url: nearestUrl(named.length === 1 ? named[0] : null),
     });
   }
 
-  // Generate answer
   let body: string;
   if (named.length > 1) {
-    // Multi-scheme comparison / query
-    // Gather answer for each named scheme from the retrieved chunks
     const schemeFacts: string[] = [];
     for (const name of named) {
       const match = chunks.find((c) => c.scheme_name.toLowerCase().includes(name.toLowerCase()));
@@ -418,7 +390,7 @@ export async function answerQuestion(rawQuery: string): Promise<Answer> {
   }
 
   if (!body) {
-    body = "I couldn't find this in the available sources.";
+    body = concept ? concept.summary : "I couldn't find this in the available sources.";
   }
 
   return result("answer", body, {

@@ -1,4 +1,7 @@
 {
   "name": "HDFC MF FAQ",
-  "description": "Facts-only assistant for select HDFC Mutual Fund schemes with pipeline inspector."
+  "description": "Comprehensive Mutual Fund FAQ assistant answering general mutual fund questions (NAV, SIP, fund types, etc.) and fund scheme facts with pipeline inspection.",
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

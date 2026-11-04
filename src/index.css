@@ -102,6 +102,41 @@ h1 {
 
 .examples button:hover { background: var(--chip); }
 
+.thread-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.thread-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.clear-btn {
+  background: var(--white);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.82rem;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.clear-btn:hover {
+  background: var(--chip);
+  color: #c93b3b;
+  border-color: #f0c2c2;
+}
+
 .thread { display: flex; flex-direction: column; gap: 12px; }
 
 .message {

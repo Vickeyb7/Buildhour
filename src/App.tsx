@@ -4,6 +4,7 @@ import corpusData from "./data/corpus.json";
 import manifestData from "./data/manifest.json";
 import metaData from "./data/meta.json";
 import { answerQuestion, Chunk, Answer } from "./lib/ask";
+import { MF_CONCEPTS } from "./lib/knowledge";
 
 interface Message {
   role: "user" | "assistant";
@@ -12,12 +13,21 @@ interface Message {
   updated?: string | null;
 }
 
+const BROAD_EXAMPLES = [
+  "What is NAV and how is it calculated?",
+  "What is the difference between Direct and Regular plans?",
+  "What is the expense ratio of HDFC Large Cap Fund?",
+  "How does an ELSS tax saver fund work?",
+  "What is an exit load in mutual funds?",
+  "What is the minimum SIP for HDFC Mid Cap Fund?",
+];
+
 export default function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [chunks, setChunks] = useState<Chunk[]>([]);
-  const [inspectorTab, setInspectorTab] = useState<"retrieval" | "manifest" | "counts" | "meta">("retrieval");
+  const [inspectorTab, setInspectorTab] = useState<"retrieval" | "concepts" | "manifest" | "counts" | "meta">("retrieval");
 
   const chunkCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -32,58 +42,93 @@ export default function App() {
     if (!trimmed || busy) return;
     setBusy(true);
     setDraft("");
+
+    let answer: Answer;
     try {
-      const answer: Answer = await answerQuestion(trimmed);
-      const userText = answer.kind === "pii" ? "Personal details were removed." : trimmed;
-      setMessages((current) => [
-        ...current,
-        { role: "user", body: userText },
-        {
-          role: "assistant",
-          body: answer.body,
-          source_url: answer.source_url,
-          updated: answer.updated,
-        },
-      ]);
-      setChunks(answer.chunks || []);
+      const response = await fetch("/api/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: trimmed }),
+      });
+
+      if (response.ok) {
+        answer = await response.json();
+      } else {
+        answer = await answerQuestion(trimmed);
+      }
     } catch {
-      setMessages((current) => [
-        ...current,
-        { role: "user", body: trimmed },
-        {
-          role: "assistant",
-          body: "The answer service failed.",
+      // Local client fallback
+      try {
+        answer = await answerQuestion(trimmed);
+      } catch {
+        answer = {
+          kind: "error",
+          body: "The answer service encountered an issue. Please try again.",
           source_url: null,
           updated: null,
-        },
-      ]);
-      setChunks([]);
-    } finally {
-      setBusy(false);
+          chunks: [],
+        };
+      }
     }
+
+    const userText = answer.kind === "pii" ? "Personal details were removed." : trimmed;
+    setMessages((current) => [
+      ...current,
+      { role: "user", body: userText },
+      {
+        role: "assistant",
+        body: answer.body,
+        source_url: answer.source_url,
+        updated: answer.updated,
+      },
+    ]);
+    setChunks(answer.chunks || []);
+    setBusy(false);
+  }
+
+  function handleClearHistory() {
+    setMessages([]);
+    setChunks([]);
   }
 
   function corpusLabel() {
-    return `Stored chunks: ${corpusData.length}. Embedding model: ${metaData.model}.`;
+    return `Stored scheme chunks: ${corpusData.length}. Core MF concepts indexed: ${MF_CONCEPTS.length}.`;
   }
 
   return (
     <>
       <header className="topbar">
-        <p className="brand">HDFC MF FAQ</p>
+        <p className="brand">Mutual Fund FAQ Assistant</p>
         <p className="disclaimer">{appConfig.ui.disclaimer}</p>
       </header>
       <main>
         <section className="panel">
-          <h1>HDFC MF FAQ</h1>
-          <p className="welcome">{appConfig.ui.welcome}</p>
+          <h1>Mutual Fund FAQ</h1>
+          <p className="welcome">
+            Ask any question about mutual funds—including core concepts (NAV, SIP, Expense Ratio, Direct vs Regular, ELSS, Taxation) or specific scheme facts.
+          </p>
           <div className="examples">
-            {appConfig.ui.examples.map((example) => (
+            {BROAD_EXAMPLES.map((example) => (
               <button key={example} type="button" onClick={() => handleAsk(example)}>
                 {example}
               </button>
             ))}
           </div>
+
+          {messages.length > 0 && (
+            <div className="thread-bar">
+              <span className="thread-title">Conversation ({Math.ceil(messages.length / 2)})</span>
+              <button
+                type="button"
+                className="clear-btn"
+                onClick={handleClearHistory}
+                title="Clear current conversation history"
+              >
+                Clear history
+              </button>
+            </div>
+          )}
+
           <div className="thread">
             {messages.map((message, index) => (
               <article className={`message ${message.role === "user" ? "user" : "assistant"}`} key={index}>
@@ -107,8 +152,8 @@ export default function App() {
             }}
           >
             <input
-              aria-label="Ask a factual question"
-              placeholder="Ask a factual question"
+              aria-label="Ask any mutual fund question"
+              placeholder="Ask any mutual fund question (e.g., What is NAV?)..."
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
             />
@@ -125,6 +170,13 @@ export default function App() {
                 onClick={() => setInspectorTab("retrieval")}
               >
                 Last retrieval
+              </button>
+              <button
+                type="button"
+                className={`tab-btn ${inspectorTab === "concepts" ? "active" : ""}`}
+                onClick={() => setInspectorTab("concepts")}
+              >
+                MF Concepts ({MF_CONCEPTS.length})
               </button>
               <button
                 type="button"
@@ -172,9 +224,28 @@ export default function App() {
                     </tbody>
                   </table>
                 ) : (
-                  <p>Ask a question to see retrieved chunks.</p>
+                  <p>Ask a question to see retrieved chunks or concept sources.</p>
                 )}
               </div>
+            )}
+
+            {inspectorTab === "concepts" && (
+              <table>
+                <thead>
+                  <tr>
+                    <th style={{ width: "180px" }}>Concept</th>
+                    <th>Summary</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {MF_CONCEPTS.map((c) => (
+                    <tr key={c.id}>
+                      <td><strong>{c.name}</strong></td>
+                      <td>{c.summary}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
 
             {inspectorTab === "manifest" && (
